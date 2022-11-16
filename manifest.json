@@ -1,0 +1,18 @@
+{
+    "manifest_version": 2,
+    "name": "Mason Test App",
+    "description": "Mason Test App 2",
+    "version": "1.1",
+    "icons": {
+    "128": "128.ico"
+    },
+    "background": {
+        "scripts": ["background.js"],
+        "persistent": false
+      },
+    "permissions": [
+        "wallpaper"
+      ]
+
+      
+    }
