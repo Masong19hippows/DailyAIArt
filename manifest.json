@@ -2,7 +2,7 @@
     "manifest_version": 3,
     "name": "Daily AI Wallpaper",
     "author": "Masong19hippows",
-    "description": "Periodically Change Your Wallpaper With AI Generated Art \n\n This webscrapes data from Nigthcafe and displays them as your wallpaper (after some editing). If you want a detailed look at how each option affects the final image, look at https://creator.nightcafe.studio/explore and play around with settings.\n\n The icons for this extension were provided by icons8 at https://icons8.com/icons/set/robot-art",
+    "description": "Periodically Change Your Wallpaper With AI Generated Art.",
     "version": "1.0",
     "icons": {
       "16": "icons/16.png",
