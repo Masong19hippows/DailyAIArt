@@ -1,6 +1,7 @@
+// Global Tab so that we can check it later. 
 var globalTab;
-var tabDelete;
 
+// Setting options as global so we can view it anywhere
 var options = {
   filter: '', 
   blur: '',
@@ -8,14 +9,19 @@ var options = {
   frequency: {}
 };
 
+// Entry point when alarm goes off
 chrome.alarms.onAlarm.addListener(function(alarm) {
   if (alarm.name === "main") {
     entry();
   }
 });
+
+// Get the tab to inject into, if none exists, create
 async function getTab() {
 
   return new Promise((resolve, reject) => {
+
+    // Literally all possible edge cases
     chrome.tabs.query({}).then((tabs) => {
       if(tabs.length == 0){
         chrome.windows.create({state: 'maximized',url: 'https://google.com'}).then((window) => {
@@ -69,25 +75,21 @@ async function getTab() {
     
   });
 }
-function callback() {
-  if (chrome.runtime.lastError) {
-      console.log(chrome.runtime.lastError.message);
-  }
-}
+
+// Once we get the tab, we inject it
 function entry(){
- 
   getTab().then((tab) =>{
     globalTab = tab;
     chrome.scripting.executeScript({
       target: { tabId: tab.tab.id },
       files: ["inject.js"]
-    }, function() {
-      tabDelete = globalTab.discard;
     });
  });  
 }
 
+// Listening for messages and handling stuff that cannot run in an injected tab
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  // Handles the fetch request to nightcafe. Cannot be done in injected tab because CORS.
   if (request.pic == ''){
     fetch(request.link).then((r) => {
       r.text().then((re) => {
@@ -98,13 +100,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       });  
     }); 
   } else {
-      if (tabDelete){
+      // Checks if a tab was created to inject into. If so, deletes it
+      if (globalTab.discard){
         if (globalTab.window == ''){
           chrome.tabs.remove(globalTab.tab.id);
         } else {
           chrome.windows.remove(globalTab.window);
         }
       }
+      // Gets the image data sent form injected tab, and sets the wallpaper to it.
       var newArray = JSON.parse(request.pic);
       var arrayBuffer = new Uint8Array(newArray.file).buffer;
       chrome.wallpaper.setWallpaper(
@@ -113,12 +117,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           'layout': "CENTER_CROPPED",
           'filename': 'wallpaper.png'
         },
-        callback
+        // Catches any weird errors.
+        function() {
+          if (chrome.runtime.lastError) {
+              console.log(chrome.runtime.lastError.message);
+          }
+        }
       );
+      sendResponse();
 }
+  // Makes the request async
   return true;
 });
 
+// Listens for when the extension is first installed, and sets options to default values
 chrome.runtime.onInstalled.addListener(function (object) {
   options.blur = '15';
   options.filter = 'None';
@@ -145,7 +157,7 @@ chrome.runtime.onInstalled.addListener(function (object) {
           period = options.frequency.amount;
           break;
   }
-
+  // Creates alarm and sets itt o activate now.
   chrome.alarms.create(
       'main',
       {when: Date.now(), periodInMinutes: period},

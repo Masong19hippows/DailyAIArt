@@ -1,3 +1,4 @@
+// Sets the options to be global
 var options = {
   filter: '', 
   blur: '',
@@ -5,6 +6,7 @@ var options = {
   frequency: {}
 };
 
+// Gets the options and sets them locally, then initiates the main injection
 chrome.storage.sync.get(["options"], function(result) {
   options.filter = result.options.filter;
   options.blur = result.options.blur;
@@ -14,12 +16,14 @@ chrome.storage.sync.get(["options"], function(result) {
 });
 
 
+// Gets the image, comverts it into 16:9 format, and then fills the remaining/background pixels
+//to a blurred version of the image
 async function fillBlur(link) {
     var canvas = document.createElement('canvas');
     var ctx = canvas.getContext('2d');
     var blob;
   
-  
+    // Creating image DOM object. This cannot be done inside of a content script.
     var img = new Image();
     img.crossOrigin = 'Anonymous';
     img.src = link;
@@ -27,10 +31,8 @@ async function fillBlur(link) {
   
       var dx = 0;
       var dy = 0;
-  
       var calculatedHeight = Math.round((img.width / 16) * 9);
       var calculatedWidth = Math.round((img.height / 9) * 16);
-  
   
       //Need to pad above and below
       if (calculatedHeight > img.height) {
@@ -60,32 +62,33 @@ async function fillBlur(link) {
     });
   }
   
+// Converts the local image into a blob object
+function dataURItoBlob(dataURI) {
+  // convert base64 to raw binary data held in a string
+  // doesn't handle URLEncoded DataURIs - see SO answer #6850276 for code that does this
+  var byteString = atob(dataURI.split(',')[1]);
 
-  function dataURItoBlob(dataURI) {
-    // convert base64 to raw binary data held in a string
-    // doesn't handle URLEncoded DataURIs - see SO answer #6850276 for code that does this
-    var byteString = atob(dataURI.split(',')[1]);
-  
-    // separate out the mime component
-    var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0]
-  
-    // write the bytes of the string to an ArrayBuffer
-    var ab = new ArrayBuffer(byteString.length);
-  
-    // create a view into the buffer
-    var ia = new Uint8Array(ab);
-  
-    // set the bytes of the buffer to the correct values
-    for (var i = 0; i < byteString.length; i++) {
-        ia[i] = byteString.charCodeAt(i);
-    }
-  
-    // write the ArrayBuffer to a blob, and you're done
-    var blob = new Blob([ab], {type: mimeString});
-    return blob;
-  
+  // separate out the mime component
+  var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0]
+
+  // write the bytes of the string to an ArrayBuffer
+  var ab = new ArrayBuffer(byteString.length);
+
+  // create a view into the buffer
+  var ia = new Uint8Array(ab);
+
+  // set the bytes of the buffer to the correct values
+  for (var i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
   }
+
+  // write the ArrayBuffer to a blob, and you're done
+  var blob = new Blob([ab], {type: mimeString});
+  return blob;
+
+}
   
+// Sends the link to be fetched by content scipt. Cannot do inside of injection because of CORS.
 async function getArtLink(link){
   return new Promise((resolve, reject) => {
     chrome.runtime.sendMessage({link: link, pic: ''}).then((response) => {
@@ -94,8 +97,10 @@ async function getArtLink(link){
   }); 
   }
 
-  
+
+// Entry point for the injection
 function injection(){
+  // Creates the link to be fetched using the user defined options
   var link = 'https://creator.nightcafe.studio/explore?';
   switch (options.filter){
     case "None":
@@ -162,6 +167,7 @@ function injection(){
       break;
   }
 
+  // Gets the image from link, proccess' it in injection, then sends the result to content script.
   getArtLink(link).then((newlink) => {
       fillBlur(newlink).then((data) => {
       var newArray = Array.from(new Uint8Array(data));

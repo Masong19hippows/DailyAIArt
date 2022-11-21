@@ -1,23 +1,26 @@
+// Sets options to be global
 var options = {
     filter: '', 
     blur: '',
     sort: '',
     frequency: {}
 };
-chrome.storage.sync.get(["options"], function(result) {
 
+// Getting the options and then setting the local values
+chrome.storage.sync.get(["options"], function(result) {
     options.filter = result.options.filter;
     options.blur = result.options.blur;
     options.sort = result.options.sort;
     options.frequency = result.options.frequency;
 
+    // All DOM elements to be edited in popup.html
     var selectFilter = document.getElementById('filter');
     var range = document.getElementById('blur');
     var selectSort = document.getElementById('sort');
     var type = document.getElementById('type');
     var amount = document.getElementById('amount');
     
-
+    // Sets min/max for fequency based on the type of Days/Hours/Minutes
     switch (options.frequency.type){
         case "Day":
             type.selectedIndex = 2;
@@ -43,6 +46,7 @@ chrome.storage.sync.get(["options"], function(result) {
 
     }
 
+    // Setting the default DOM element value based on the option corresponding to it
     for(var i, j = 0; i = selectSort.options[j]; j++) {
         if(i.value == options.sort) {
             selectSort.selectedIndex = j;
@@ -60,6 +64,7 @@ chrome.storage.sync.get(["options"], function(result) {
     amount.value = options.frequency.amount;
 
 
+    // Adds all of the event listeners to change DOM and set settings whenever values are changed
     range.addEventListener('change', (event) => {
         document.getElementById('text').value = range.value;
         settings("blur", event.target.value);
@@ -101,8 +106,11 @@ chrome.storage.sync.get(["options"], function(result) {
     });
 });
 
+// Sets the settings for the extension based on the value thats user inputed.
+// Then creates a new alarm for it that activates now. 
+// If an alarm is created with the same name as a previous alarm, the previous alarm is overwritten
 function settings(key, value, am){
-
+    // Setting the period to activate based on type of Days/Hours/Minutes
     if (key.includes("frequency")){
         if(key == "frequency.type"){
             amount.value = am;
@@ -117,6 +125,7 @@ function settings(key, value, am){
             }
         }
 
+        // Need to update the min/max values for popup.html
         switch (options.frequency.type){
             case "Day":
                 amount.min = 0;
@@ -139,8 +148,8 @@ function settings(key, value, am){
         
     } else {
         options[key] = value;
-    
     }
+    // Storing the settings in storage to be fecthed by other parts of extension
     chrome.storage.sync.set({options: options}).then(function(){
         switch(options.frequency.type){
             case "Day":
@@ -155,7 +164,7 @@ function settings(key, value, am){
                 period = options.frequency.amount;
                 break;
         }
-
+        //Creates alarm for now
         chrome.alarms.create(
             'main',
             {when: Date.now(), periodInMinutes: Number(period)},
