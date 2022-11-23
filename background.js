@@ -157,7 +157,7 @@ chrome.runtime.onInstalled.addListener(function (object) {
           period = options.frequency.amount;
           break;
   }
-  // Creates alarm and sets itt o activate now.
+  // Creates alarm and sets it to activate now.
   chrome.alarms.create(
       'main',
       {when: Date.now(), periodInMinutes: period},

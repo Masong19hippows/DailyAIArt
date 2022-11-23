@@ -19,6 +19,7 @@ chrome.storage.sync.get(["options"], function(result) {
     var selectSort = document.getElementById('sort');
     var type = document.getElementById('type');
     var amount = document.getElementById('amount');
+    var apply = document.getElementById('apply');
     
     // Sets min/max for fequency based on the type of Days/Hours/Minutes
     switch (options.frequency.type){
@@ -65,109 +66,95 @@ chrome.storage.sync.get(["options"], function(result) {
 
 
     // Adds all of the event listeners to change DOM and set settings whenever values are changed
-    range.addEventListener('change', (event) => {
+    apply.addEventListener('click', function() {
+        apply.innerHTML = 'Applied';
+        setTimeout(function(){
+            apply.innerHTML = 'Make a Change';
+        }, 1000);
+        options['blur'] = range.value;
+        options["filter"] = selectFilter.value;
+        options["sort"] = selectSort.value;
+        options["frequency"] = {
+            type: type.value,
+            amount: amount.value
+        };
+        // Sets the settings in Storage to be fetched by others
+        chrome.storage.sync.set({options: options}).then(function(){
+            switch(options.frequency.type){
+                case "Day":
+                    period = 24*60*options.frequency.amount;
+                    break;
+    
+                case "Hour":
+                    period = 60*options.frequency.amount;
+                    break;
+    
+                case "Minute":
+                    period = options.frequency.amount;
+                    break;
+            }
+            //Creates alarm for now
+            chrome.alarms.create(
+                'main',
+                {when: Date.now(), periodInMinutes: Number(period)},
+                );
+        });
+        
+    });
+
+    // Updates the value of the blur output
+    range.addEventListener('change', () => {
         document.getElementById('text').value = range.value;
-        settings("blur", event.target.value);
+        apply.innerHTML = 'Apply Changes';
     });
-    selectFilter.addEventListener('change', (event) => {
-        settings("filter", event.target.value);
+
+    // Updates the update button on change
+    selectFilter.addEventListener('change', () => {
+        console.log("is this working");
+        apply.innerHTML = 'Apply Changes';
     });
-    selectSort.addEventListener('change', (event) => {
-        settings("sort", event.target.value);
+    selectSort.addEventListener('change', () => {
+        apply.innerHTML = 'Apply Changes';
+        console.log("is this working");
+
     });
+
+    // Updates the value of amount by whatever type is
     type.addEventListener('change', (event) => {
-        var am = amount.value;
         switch (event.target.value){
             case "Hour":
                 if (amount.value > 23){
-                    am = 23;
+                    amount.value = 23;
                 }
+                amount.min = 0;
+                amount.max = 24;
                 break;
 
             case "Day":
                 if (amount.value > 7){
-                    am = 7;
+                    amount.value = 7;
                 }
+                amount.min = 0;
+                amount.max = 8;
                 break;
+
+            case "Minute":
+                amount.min = 0;
+                amount.max = 60;
+                break;    
             
             default:
                 break;
         }
-        settings("frequency.type", event.target.value, am);
+        apply.innerHTML = 'Apply Changes';
     });
+    // Makes the max/min values wrap around
     amount.addEventListener('change', (event) => {
         if(event.target.value >  amount.max-1){
             event.target.value = 1;
         } else if(event.target.value <  amount.min+1) {
             event.target.value = amount.max - 1
         } 
-        settings("frequency.amount", event.target.value);
- 
+        apply.innerHTML = 'Apply Changes'; 
     });
 });
-
-// Sets the settings for the extension based on the value thats user inputed.
-// Then creates a new alarm for it that activates now. 
-// If an alarm is created with the same name as a previous alarm, the previous alarm is overwritten
-function settings(key, value, am){
-    // Setting the period to activate based on type of Days/Hours/Minutes
-    if (key.includes("frequency")){
-        if(key == "frequency.type"){
-            amount.value = am;
-            options["frequency"] = {
-                type: value,
-                amount: am
-            };
-        } else if (key == "frequency.amount"){
-            options["frequency"] = {
-                type: options.frequency.type,
-                amount: value
-            }
-        }
-
-        // Need to update the min/max values for popup.html
-        switch (options.frequency.type){
-            case "Day":
-                amount.min = 0;
-                amount.max = 8;
-                break;
-    
-            case "Hour":
-                amount.min = 0;
-                amount.max = 24;
-                break;
-            
-            case "Minute":
-                amount.min = 0;
-                amount.max = 60;
-                break;
-    
-            default:
-                break;    
-        }    
-        
-    } else {
-        options[key] = value;
-    }
-    // Storing the settings in storage to be fecthed by other parts of extension
-    chrome.storage.sync.set({options: options}).then(function(){
-        switch(options.frequency.type){
-            case "Day":
-                period = 24*60*options.frequency.amount;
-                break;
-
-            case "Hour":
-                period = 60*options.frequency.amount;
-                break;
-
-            case "Minute":
-                period = options.frequency.amount;
-                break;
-        }
-        //Creates alarm for now
-        chrome.alarms.create(
-            'main',
-            {when: Date.now(), periodInMinutes: Number(period)},
-            );
-    });
-}
