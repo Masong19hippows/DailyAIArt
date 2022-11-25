@@ -115,7 +115,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         {
           'data': arrayBuffer,
           'layout': "CENTER_CROPPED",
-          'filename': 'wallpaper.png'
+          'filename': Date.now().toString() + '.png'
         },
         // Catches any weird errors.
         function() {
