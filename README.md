@@ -1,3 +1,5 @@
+https://chrome.google.com/webstore/detail/daily-ai-wallpaper/ealdjlkfbinaklohgbjndicjeligonho
+
 Periodically Change Your Wallpaper With AI Generated Art.
 
 This extension web-scrapes the images form Nightcafe [and edits them] and displays them as a wallpaper on ChromeOS. If you want a real-time look at what each setting affects, go to https://creator.nightcafe.studio/explore and play around. 
